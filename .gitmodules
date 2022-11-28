@@ -1,0 +1,3 @@
+[submodule "shell_completion"]
+	path = shell_completion
+	url = https://github.com/JoshMcguigan/shell_completion
