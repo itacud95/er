@@ -9,7 +9,6 @@ fn main() {
 
 struct Command<'a> {
     command: &'a str,
-    sub_commands: Vec<&'a str>,
     childs: Vec<&'a Command<'a>>,
 }
 
@@ -17,7 +16,6 @@ impl<'a> Command<'a> {
     pub fn new(value: Box<&'a str>, cmds: Box<Vec<&'a Command>>) -> Self {
         Self {
             command: *value,
-            sub_commands: vec![],
             childs: *cmds,
         }
     }
@@ -29,7 +27,6 @@ impl<'a> Command<'a> {
         return commands;
     }
     pub fn get_commands(&self) -> Vec<&str> {
-        
         let mut commands = vec![self.command];
         // let mut commands = vec![self.command];
         // let mut commands = String::from(self.command);
@@ -53,7 +50,7 @@ fn complete() {
     let input = BashCompletionInput::from_env();
 
     match input {
-        Ok(file) => write_out(file),
+        Ok(file) => write_out(&file),
         Err(_) => return,
     };
 }
@@ -62,26 +59,46 @@ fn create_cmd_without_subcommands<'a>(cmd: &str) -> Command<'a> {
     return Command::new(Box::new("sdb_basic_test"), Box::new(vec![]));
 }
 
-// fn generate_from_index<'a>(index: u64, commands: Vec<&'a Command>) -> Vec<&'a str> {
-//     let mut output = vec![""];
-
-//     for cmd in commands.iter() {
-//         output.push(cmd.value().clone())
-//     }
-
-//     return output
-// }
-
 fn generate_from_index(index: u64, commands: Vec<Command>) -> Vec<String> {
     let mut output = Vec::new();
     for cmd in commands.iter() {
         output.push(cmd.value())
     }
 
-    return output
+    return output;
 }
 
-fn write_out(input: BashCompletionInput) {
+fn generate_from_args(args: Vec<&str>, commands: Vec<Command>) -> Vec<String> {
+    let currentArg = args.first().expect("It is not here?");
+
+    // println!("X{}", args.len());
+    // for arg in &args {
+    //     println!("#{}#", arg);
+    // }
+
+    let mut output = Vec::new();
+
+    if args.len() < 4 {}
+
+    for cmd in commands.iter() {
+        if currentArg == &cmd.value() {
+            return cmd.get_sub_commands();
+        }
+        // return cmd.get_sub_commands();
+        // output.push(cmd.value())
+        // let search = cmd.childs;
+        // search.contains();
+    }
+
+    for cmd in commands.iter() {
+        output.push(cmd.value())
+        // return cmd.get_sub_commands()
+    }
+
+    return output;
+}
+
+fn write_out(input: &BashCompletionInput) {
     let sdk_basic_test_cmd = create_cmd_without_subcommands("sdk_basic_test");
     let elf_test_cmd = create_cmd_without_subcommands("elf_test");
     let obfuscated_ptr_test_cmd = create_cmd_without_subcommands("obfuscated_ptr_test");
@@ -98,13 +115,15 @@ fn write_out(input: BashCompletionInput) {
     let build_cmd = Command::new(Box::new("build"), Box::new(vec![&shield_cmd]));
     let log_cmd = Command::new(Box::new("log"), Box::new(vec![]));
 
-    // let commands = build_cmd.get_commands();
     let commands = vec![build_cmd, log_cmd];
-    // commands.remove(3);
-    // let mut x = Vec::from_iter(commands[1..5].iter().cloned());
+
+    let args = input.args().clone();
+    // generate_from_args(args, commands);
+    // let c = args.clone();
 
     match input.arg_index() {
-        _ => complete_string(input, generate_from_index(0, commands)),
+        _ => complete_string(input, generate_from_args(args, commands)),
+        // _ => complete_string(input, generate_from_index(0, commands)),
         // _ => complete_string(input, build_cmd.get_sub_commands()),
         // 1 => complete_string(input, Vec::from_iter(commands[0..1].iter().cloned())),
         // _ => complete_string(input, Vec::from_iter(commands[1..2].iter().cloned())),
@@ -112,20 +131,15 @@ fn write_out(input: BashCompletionInput) {
     exit(0)
 }
 
-fn generate_top_level_completion<'a>() -> Vec<&'a str> {
-    return vec!["build", "log"];
-}
-
-fn generate_sub_completion<'a>() -> Vec<&'a str> {
-    return vec!["build", "log"];
-}
-
-fn complete_string(input: BashCompletionInput, txt: Vec<String>) {
+fn complete_string(input: &BashCompletionInput, txt: Vec<String>) {
     let mut commands = vec![""];
-    for cmd in txt.iter() { 
+    for cmd in txt.iter() {
         commands.push(cmd.as_str())
     }
-    
+
+    // let c = input.args();
+    // commands = c;
+
     let completions = input.complete_subcommand(commands);
     completions.suggest();
 }
