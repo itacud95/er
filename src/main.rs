@@ -8,11 +8,11 @@ fn main() {
 }
 
 struct CommandWrapper {
-    commands: Vec<Cmd>,
+    commands: Vec<Command>,
 }
 
 impl CommandWrapper {
-    pub fn new(commands: Vec<Cmd>) -> Self {
+    pub fn new(commands: Vec<Command>) -> Self {
         Self { commands }
     }
     pub fn generate_completions(&self, current_arguments: &Vec<&str>) -> Vec<&str> {
@@ -36,13 +36,13 @@ impl CommandWrapper {
     }
 }
 
-struct Cmd {
+struct Command {
     value: String,
-    sub_commands: Vec<Cmd>,
+    sub_commands: Vec<Command>,
 }
 
-impl Cmd {
-    pub fn new(value: &str, cmds: Vec<Cmd>) -> Self {
+impl Command {
+    pub fn new(value: &str, cmds: Vec<Command>) -> Self {
         Self {
             value: value.to_string(),
             sub_commands: cmds,
@@ -78,17 +78,17 @@ fn complete() {
 
 fn create_commands() -> CommandWrapper {
     return CommandWrapper::new(vec![
-        Cmd::new(
+        Command::new(
             "build",
             vec![
-                Cmd::new("sdk_basic_test", vec![]),
-                Cmd::new("elf_test", vec![]),
-                Cmd::new("obfuscated_ptr_test", vec![]),
+                Command::new("sdk_basic_test", vec![]),
+                Command::new("elf_test", vec![]),
+                Command::new("obfuscated_ptr_test", vec![]),
             ],
         ),
-        Cmd::new("log", vec![]),
-        Cmd::new("checkout", vec![]),
-        Cmd::new("xkeyboard", vec![]),
+        Command::new("log", vec![]),
+        Command::new("checkout", vec![]),
+        Command::new("xkeyboard", vec![]),
     ]);
 }
 
