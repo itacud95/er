@@ -13,13 +13,13 @@ struct CommandWrapper {
 
 impl CommandWrapper {
     pub fn new(commands: Vec<Cmd>) -> Self {
-        Self { commands: commands }
+        Self { commands }
     }
-    pub fn generate_completions(&self, current_arguments: &Vec<&str>) -> Vec<String> {
+    pub fn generate_completions(&self, current_arguments: &Vec<&str>) -> Vec<&str> {
         if current_arguments.len() < 3 {
-            let mut output: Vec<String> = vec![];
+            let mut output: Vec<&str> = vec![];
             for cmd in &self.commands {
-                output.push(String::from(&cmd.value))
+                output.push(&cmd.value)
             }
             return output;
         }
@@ -42,13 +42,13 @@ struct Cmd {
 }
 
 impl Cmd {
-    pub fn new(value: String, cmds: Vec<Cmd>) -> Self {
+    pub fn new(value: &str, cmds: Vec<Cmd>) -> Self {
         Self {
-            value: value,
+            value: value.to_string(),
             sub_commands: cmds,
         }
     }
-    pub fn generate_completions(&self, current_arguments: &Vec<&str>) -> Vec<String> {
+    pub fn generate_completions(&self, current_arguments: &Vec<&str>) -> Vec<&str> {
         for arg in current_arguments {
             for cmd in self.sub_commands.iter() {
                 if arg == &cmd.value {
@@ -58,10 +58,10 @@ impl Cmd {
         }
         return self.generate_sub_commands();
     }
-    pub fn generate_sub_commands(&self) -> Vec<String> {
-        let mut commands = vec![];
+    pub fn generate_sub_commands(&self) -> Vec<&str> {
+        let mut commands: Vec<&str> = vec![];
         for name in self.sub_commands.iter() {
-            commands.push(name.value.clone());
+            commands.push(&name.value);
         }
         return commands;
     }
@@ -76,38 +76,36 @@ fn complete() {
     };
 }
 
-fn get_completions(input: &impl CompletionInput) -> Vec<String> {
-    let current_args = input.args().clone();
-
-    let wrapper = CommandWrapper::new(vec![
+fn create_commands() -> CommandWrapper {
+    return CommandWrapper::new(vec![
         Cmd::new(
-            String::from("build"),
+            "build",
             vec![
-                Cmd::new(String::from("sdk_basic_test"), vec![]),
-                Cmd::new(String::from("elf_test"), vec![]),
-                Cmd::new(String::from("obfuscated_ptr_test"), vec![]),
+                Cmd::new("sdk_basic_test", vec![]),
+                Cmd::new("elf_test", vec![]),
+                Cmd::new("obfuscated_ptr_test", vec![]),
             ],
         ),
-        Cmd::new(String::from("log"), vec![]),
-        Cmd::new(String::from("checkout"), vec![]),
+        Cmd::new("log", vec![]),
+        Cmd::new("checkout", vec![]),
+        Cmd::new("xkeyboard", vec![]),
     ]);
-
-    return wrapper.generate_completions(&current_args);
 }
 
 fn generate_commands_and_exit(input: &BashCompletionInput) {
-    let commands = get_completions(input);
+    let wrapper = create_commands();
+    let commands = wrapper.generate_completions(&input.args());
     complete_string(input, commands);
     exit(0)
 }
 
-fn complete_string(input: &BashCompletionInput, txt: Vec<String>) {
-    let mut commands = vec![];
+fn complete_string(input: &BashCompletionInput, txt: Vec<&str>) {
+    let mut commands: Vec<&str> = vec![];
     for cmd in txt.iter() {
         if cmd.is_empty() {
             continue;
         }
-        commands.push(cmd.as_str())
+        commands.push(cmd)
     }
 
     let completions = input.complete_subcommand(commands);
@@ -121,8 +119,9 @@ mod tests {
     #[test]
     fn complete_subcommand_fetch() {
         let input = BashCompletionInput::from("er");
-        let completions = get_completions(&input);
-        assert_eq!(3, completions.len());
+        let wrapper = create_commands();
+        let completions = wrapper.generate_completions(&input.args());
+        assert_eq!(4, completions.len());
         assert_eq!("build", completions[0]);
         assert_eq!("log", completions[1]);
         assert_eq!("checkout", completions[2]);
@@ -131,7 +130,8 @@ mod tests {
     #[test]
     fn complete_subcommand_build() {
         let input = BashCompletionInput::from("er build "); // todo: Why do we need space after build?
-        let completions = get_completions(&input);
+        let wrapper = create_commands();
+        let completions = wrapper.generate_completions(&input.args());
         assert_eq!(3, completions.len());
         assert_eq!("sdk_basic_test", completions[0]);
         // assert_eq!("log", completions[1]);
