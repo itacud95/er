@@ -1,10 +1,14 @@
 use std::{process::exit, vec};
-
 use shell_completion::{BashCompletionInput, CompletionInput, CompletionSet};
+
+use crate::xkeyboard::public_function;
+
+pub mod xkeyboard;
 
 fn main() {
     complete();
-    println!("in main")
+    println!("in main");
+    public_function();
 }
 
 struct CommandWrapper {
