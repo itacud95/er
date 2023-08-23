@@ -5,37 +5,40 @@ use crate::autocomplete::autocomplete;
 pub mod xkeyboard;
 pub mod autocomplete;
 
-// add a field to Data type: i32 name: foo
-struct Data {
-    msg: String,
-    size: i32,
-    foo: i32,
+// add a field to CustomerOrder type: i32 name: serial_id
+struct CustomerOrder {
+    order_status: String,
+    quantity: i32,
+    serial_id: i32,
 }
 
-impl Data {
-    fn new(msg: &str, size: i32, foo: i32) -> Self { 
-        Self { msg: String::from(msg), size: (size), foo: (foo) }
+impl CustomerOrder {
+    fn new(order_status: &str, quantity: i32, serial_id: i32) -> Self { 
+        Self { order_status: String::from(order_status), quantity: (quantity), serial_id: (serial_id) }
      } 
 }
 
-impl std::fmt::Display for Data {
+impl std::fmt::Display for CustomerOrder {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "Data: msg: {}, size: {}, foo: {}", self.msg, self.size, self.foo)
+        write!(f, "CustomerOrder: order_status: {}, quantity: {}, serial_id: {}", self.order_status, self.quantity, self.serial_id)
     }
 }
 
-fn foobar(mut foo: Data) -> Data {
-    foo.msg = "not the same, but different".to_string();
-    println!("foobar: {}", foo);
-    return foo;
+fn finish_order(order_to_complete: CustomerOrder) -> CustomerOrder {
+    CustomerOrder {
+        order_status: "complete".to_string(),
+        ..order_to_complete
+    }
 }
 
 fn burrowing() {
-    let foo = Data::new("msg", 230, 50);
-    println!("{}", foo);
+    let order = CustomerOrder::new("pending", 230, 50);
+    println!("pending order: {}", order);
 
-    let foo = foobar(foo);
-    println!("{}", foo);
+    // customer finished order ...
+
+    let serial_id = finish_order(order);
+    println!("finished order: {}", serial_id);
 }
 
 fn main() {
