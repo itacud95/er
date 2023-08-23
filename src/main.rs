@@ -1,4 +1,6 @@
 
+use std::collections::btree_map::OccupiedEntry;
+
 use crate::xkeyboard::public_function;
 use crate::autocomplete::autocomplete;
 
@@ -42,8 +44,19 @@ fn burrowing() {
 }
 
 fn main() {
-    autocomplete();
-    println!("in main");
-    public_function();
-    burrowing();
+    let operation = autocomplete();
+    if operation.is_some(){
+        // println!("is_some()");
+        
+        return;
+        operation.unwrap()();
+    }
+    else if operation.is_none() {
+        // println!("is_none()");
+    }
+    // println!("in main");
+    // operation();
+    // println!("in main");
+    // public_function();
+    // burrowing();
 }
