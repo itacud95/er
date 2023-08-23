@@ -1,4 +1,4 @@
-use std::{process::exit, vec};
+use std::{process::exit, vec, collections::btree_map::OccupiedEntry};
 use shell_completion::{BashCompletionInput, CompletionInput, CompletionSet};
 
 
@@ -6,11 +6,33 @@ pub fn autocomplete() {
 complete();
 }
 
-pub struct PublicStruct {
-    // struct fields go here
+
+fn test_function() -> i32 {
+    return -1;
 }
 
+enum OptionType {
+    Options(Vec<Option>),
+    Operation(fn()->i32),
+}
 
+struct Option { 
+    readable: String, 
+    option_type: OptionType,
+}
+
+fn create_option(readable: &str, options: Vec<Option>) -> Option {
+    Option{readable: readable.to_string(), option_type: OptionType::Options(options)}
+}
+
+fn create_operation(readable: &str, operation: fn()->i32) -> Option {
+    Option{readable: readable.to_string(), option_type: OptionType::Operation(operation)}
+}
+
+fn testit() {
+    let option = Option{readable: "readable".to_string(), option_type: OptionType::Options(vec![])};
+    let operation = Option{readable: "readable".to_string(), option_type: OptionType::Operation(test_function)};
+}
 
 struct CommandWrapper {
     commands: Vec<Command>,
