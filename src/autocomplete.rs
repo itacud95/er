@@ -107,16 +107,16 @@ fn create_operation(readable: &str, operation: fn() -> i32) -> CommandOption {
 fn initialize_options() -> Vec<CommandOption> {
     vec![
         create_option(
-            "do_some",
+            "binaries",
             vec![
                 create_option(
-                    "other_stuff",
-                    vec![create_operation("final_thing", test_function)],
+                    "show",
+                    vec![create_operation("test-file", test_function)],
                 ),
-                create_option("or_this", vec![create_operation("one", test_function)]),
+                create_option("write", vec![create_operation("new-file.bin", test_function)]),
             ],
         ),
-        create_operation("do_it_right_away", test_function),
+        create_operation("gnu-plot", test_function),
     ]
 }
 
