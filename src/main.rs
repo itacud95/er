@@ -6,7 +6,7 @@ fn main() {
     let operation = autocomplete();
     if operation.is_some(){
         // println!("is_some()");
-        
+        operation.unwrap()();
         return;
         // operation.unwrap()();
     }

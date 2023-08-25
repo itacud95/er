@@ -2,11 +2,15 @@ use shell_completion::{BashCompletionInput, CompletionInput, CompletionSet};
 use std::vec;
 
 pub fn autocomplete() -> Option<fn() -> i32>{
-
     match BashCompletionInput::from_env() {
         Err(_) => {
-            println!("not completing");
-            //todo: run_autocomplete() but only return the operation - not completing. 
+            let args: Vec<String> = std::env::args().collect();
+            let options = initialize_options();
+            let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
+            let current_option = get_current_option(v8, &options);
+            if let OptionType::Operation(operation) = &current_option.unwrap().option_type {
+                return Some(operation.to_owned());
+            }
             return None
         },
         Ok(input) => return run_autocomplete(&input),
@@ -48,7 +52,6 @@ fn get_current_option(input: Vec<&str>, options: &Vec<CommandOption>) -> Option<
 }
 
 fn run_autocomplete(input: &BashCompletionInput) -> Option<fn() -> i32> {
-
     let options = initialize_options();
     let current_option = get_current_option(input.args(), &options);
     
@@ -61,7 +64,7 @@ fn run_autocomplete(input: &BashCompletionInput) -> Option<fn() -> i32> {
             // exit(0);
         }
         else if let OptionType::Operation(operation) = &current_option.option_type {
-            return Some(*operation);
+            // return Some(*operation);
         }
     }else if current_option.is_none() { 
         let autocomplete_options = create_strings_from_vector(&options);
