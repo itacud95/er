@@ -8,6 +8,10 @@ pub fn autocomplete() -> Option<fn() -> i32>{
             let options = initialize_options();
             let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
             let current_option = get_current_option(v8, &options);
+            if current_option.is_none(){
+                print_help();
+                return None;
+            }
             if let OptionType::Operation(operation) = &current_option.unwrap().option_type {
                 return Some(operation.to_owned());
             }
@@ -15,6 +19,16 @@ pub fn autocomplete() -> Option<fn() -> i32>{
         },
         Ok(input) => return run_autocomplete(&input),
     };
+}
+
+fn print_help() {
+    let options = initialize_options();
+    let options = create_strings_from_vector(&options);
+    println!("Usage: er [OPTIONS]");
+    println!("Options: ");
+    for opt in options {
+        println!("\t{0}", opt);
+    }
 }
 
 fn create_strings_from_vector(options: &Vec<CommandOption>) -> Vec<&str> {
