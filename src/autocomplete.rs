@@ -1,8 +1,32 @@
 use shell_completion::{BashCompletionInput, CompletionInput, CompletionSet};
-use std::vec;
 
-pub fn autocomplete() -> Option<fn() -> i32> {
-    let options = initialize_options();
+#[derive(Clone)]
+enum OptionType {
+    Options(Vec<CommandOption>),
+    Operation(fn() -> i32),
+}
+
+#[derive(Clone)]
+pub struct CommandOption {
+    readable: String,
+    option_type: OptionType,
+}
+
+pub fn create_option(readable: &str, options: Vec<CommandOption>) -> CommandOption {
+    CommandOption {
+        readable: readable.to_string(),
+        option_type: OptionType::Options(options),
+    }
+}
+
+pub fn create_operation(readable: &str, operation: fn() -> i32) -> CommandOption {
+    CommandOption {
+        readable: readable.to_string(),
+        option_type: OptionType::Operation(operation),
+    }
+}
+
+pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
     let autocompleter = Autocomleter { options: options };
 
     match BashCompletionInput::from_env() {
@@ -11,14 +35,15 @@ pub fn autocomplete() -> Option<fn() -> i32> {
             let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
             let current_option = autocompleter.get_current_option(v8);
 
-            if current_option.is_some() { 
+            if current_option.is_some() {
                 if let OptionType::Operation(operation) = &current_option.unwrap().option_type {
                     return Some(operation.to_owned());
-                }    
+                }
             }
         }
         Ok(input) => {
-            autocompleter.tab_complete(input);
+            let completions = autocompleter.tab_complete(input);
+            completions.suggest();
         }
     };
 
@@ -27,8 +52,8 @@ pub fn autocomplete() -> Option<fn() -> i32> {
 
 trait AutocomleteOperions {
     fn print_help(&self);
-    fn tab_complete(&self, input: BashCompletionInput);
-    fn get_current_option(&self, input: Vec<&str>, ) -> Option<CommandOption>;
+    fn tab_complete(&self, input: BashCompletionInput) -> Vec<String>;
+    fn get_current_option(&self, input: Vec<&str>) -> Option<CommandOption>;
 }
 
 struct Autocomleter {
@@ -44,7 +69,8 @@ impl AutocomleteOperions for Autocomleter {
             println!("\t{0}", opt);
         }
     }
-    fn tab_complete(&self, input: BashCompletionInput) {
+
+    fn tab_complete(&self, input: BashCompletionInput) -> Vec<String> {
         let current_option = self.get_current_option(input.args());
 
         if current_option.is_some() {
@@ -52,17 +78,18 @@ impl AutocomleteOperions for Autocomleter {
             if let OptionType::Options(suboptions) = &current_option.option_type {
                 let autocomplete_options = create_strings_from_vector(suboptions);
                 let completions = input.complete_subcommand(autocomplete_options);
-                completions.suggest();
+                return completions;
             } else if let OptionType::Operation(_operation) = &current_option.option_type {
             }
         } else if current_option.is_none() {
             let autocomplete_options = create_strings_from_vector(&self.options);
             let completions = input.complete_subcommand(autocomplete_options);
-            completions.suggest();
+            return completions;
         }
+        return vec![];
     }
 
-    fn get_current_option(&self, input: Vec<&str>, ) -> Option<CommandOption> {
+    fn get_current_option(&self, input: Vec<&str>) -> Option<CommandOption> {
         let mut current_option = None;
         let mut current_list = &self.options;
         for typed in &input {
@@ -84,7 +111,6 @@ impl AutocomleteOperions for Autocomleter {
 
         return current_option.cloned();
     }
-
 }
 
 fn create_strings_from_vector(options: &Vec<CommandOption>) -> Vec<&str> {
@@ -93,53 +119,6 @@ fn create_strings_from_vector(options: &Vec<CommandOption>) -> Vec<&str> {
         strings.push(option.readable.as_str());
     }
     return strings;
-}
-
-fn test_function() -> i32 {
-    println!("Test function!");
-    return -1;
-}
-
-#[derive(Clone)]
-enum OptionType {
-    Options(Vec<CommandOption>),
-    Operation(fn() -> i32),
-}
-
-#[derive(Clone)]
-struct CommandOption {
-    readable: String,
-    option_type: OptionType,
-}
-
-fn create_option(readable: &str, options: Vec<CommandOption>) -> CommandOption {
-    CommandOption {
-        readable: readable.to_string(),
-        option_type: OptionType::Options(options),
-    }
-}
-
-fn create_operation(readable: &str, operation: fn() -> i32) -> CommandOption {
-    CommandOption {
-        readable: readable.to_string(),
-        option_type: OptionType::Operation(operation),
-    }
-}
-
-fn initialize_options() -> Vec<CommandOption> {
-    vec![
-        create_option(
-            "binaries",
-            vec![
-                create_option("show", vec![create_operation("test-file", test_function)]),
-                create_option(
-                    "write",
-                    vec![create_operation("new-file.bin", test_function)],
-                ),
-            ],
-        ),
-        create_operation("gnu-plot", test_function),
-    ]
 }
 
 #[cfg(test)]
@@ -153,35 +132,39 @@ mod tests {
 
     #[test]
     fn test_options() {
-        let options = initialize_options();
-        let arguments = vec!["er "];
-        let current_option = get_current_option(arguments, &options);
+        let func = || 0;
+        let options = vec![create_operation("foo", func)];
+        let arguments = BashCompletionInput::from("er ");
+        let autocompleter = Autocomleter { options: options };
+        let current_option = autocompleter.get_current_option(arguments.args());
 
+        // no option is returned
         assert!(current_option.is_none());
 
-        let autocomplete_options = create_strings_from_vector(&options);
-        assert!(autocomplete_options.len() > 0);
-        assert!(autocomplete_options.contains(&"do_some".to_string().as_str()));
+        let completions = autocompleter.tab_complete(arguments);
+        
+        assert!(completions.len() > 0);
+        assert!(completions[0] == autocompleter.options[0].readable);
     }
 
     #[test]
     fn test_options_longer() {
-        let options = initialize_options();
-        let arguments = vec!["er", "do_some", "or_this"];
-        let current_option = get_current_option(arguments, &options);
+        let func = || 0;
+        let options = vec![create_option("foobar", vec![
+            create_operation("foo", func),
+            create_operation("bar", func),
+        ])];
+        let arguments = BashCompletionInput::from("er foobar ");
+        let autocompleter = Autocomleter { options: options };
+        let current_option = autocompleter.get_current_option(arguments.args());
 
+        // a option is returned
         assert!(current_option.is_some());
 
-        if current_option.is_some() {
-            let current_option = current_option.unwrap();
-            if let OptionType::Options(suboptions) = &current_option.option_type {
-                let _autocomplete_options = create_strings_from_vector(suboptions);
-            } else if let OptionType::Operation(operation) = &current_option.option_type {
-                let _func = operation;
-            }
-        }
-
-        // let autocomplete_options = create_strings_from_vector(&options);
-        // assert!(autocomplete_options.len() > 2);
+        let completions = autocompleter.tab_complete(arguments);
+        
+        assert!(completions.len() > 0);
+        assert!(completions[0] == "foo");
+        assert!(completions[1] == "bar");
     }
 }
