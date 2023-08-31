@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn complete_subcommand_build() {
-        let _input = BashCompletionInput::from("er build "); // todo: Why do we need space after build?
+        let _input = BashCompletionInput::from("er build ");
     }
 
     #[test]
@@ -142,7 +142,7 @@ mod tests {
         assert!(current_option.is_none());
 
         let completions = autocompleter.tab_complete(arguments);
-        
+
         assert!(completions.len() > 0);
         assert!(completions[0] == autocompleter.options[0].readable);
     }
@@ -150,10 +150,10 @@ mod tests {
     #[test]
     fn test_options_longer() {
         let func = || 0;
-        let options = vec![create_option("foobar", vec![
-            create_operation("foo", func),
-            create_operation("bar", func),
-        ])];
+        let options = vec![create_option(
+            "foobar",
+            vec![create_operation("foo", func), create_operation("bar", func)],
+        )];
         let arguments = BashCompletionInput::from("er foobar ");
         let autocompleter = Autocomleter { options: options };
         let current_option = autocompleter.get_current_option(arguments.args());
@@ -162,7 +162,7 @@ mod tests {
         assert!(current_option.is_some());
 
         let completions = autocompleter.tab_complete(arguments);
-        
+
         assert!(completions.len() > 0);
         assert!(completions[0] == "foo");
         assert!(completions[1] == "bar");
