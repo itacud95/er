@@ -45,6 +45,7 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
             }
             let args = args.join(" ").yellow();
             println!("'{}' is not a valid command", args);
+            println!("Options: ");
             for help in autocompleter.get_help() {
                 println!("{}", help);
             }
@@ -60,7 +61,7 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
 }
 
 trait AutocomleteOperions {
-    fn get_help(&self) ->Vec<String>;
+    fn get_help(&self) -> Vec<String>;
     fn tab_complete(&self, input: BashCompletionInput) -> Vec<String>;
     fn get_current_option(&self, input: Vec<&str>) -> Option<CommandOption>;
 }
@@ -69,17 +70,33 @@ struct Autocomleter {
     options: Vec<CommandOption>,
 }
 
+fn parse_options(tabs: usize, options: &Vec<CommandOption>) -> Vec<String> {
+    let mut msg: Vec<String> = vec![];
+    for opt in options {
+        if tabs == 0 {
+            msg.push("--------------".to_owned());
+        }
+
+        if let OptionType::Options(options) = &opt.option_type {
+            msg.push(spaced_string(&opt.readable, tabs + 2));
+            msg.append(&mut parse_options(tabs + 4, options));
+        } else {
+            msg.push(spaced_string(
+                format!("{}", opt.readable.green()).as_str(),
+                tabs + 4,
+            ));
+        }
+    }
+    return msg.to_owned();
+}
+
+fn spaced_string(msg: &str, num_spaces: usize) -> String {
+    format!("|{:width$} {}", "", msg, width = num_spaces)
+}
+
 impl AutocomleteOperions for Autocomleter {
     fn get_help(&self) -> Vec<String> {
-        let mut msg: Vec<String> = vec![];
-        msg.push(String::from("Options: "));
-        for opt in &self.options {
-            if let OptionType::Options(_operation) = &opt.option_type {
-                msg.push(format!("\t{} ->", opt.readable));
-            } else {
-                msg.push(format!("\t{}", opt.readable.green()));
-            }
-        }
+        let msg = parse_options(0, &self.options);
         return msg;
     }
 
