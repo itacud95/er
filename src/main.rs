@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 pub mod autocomplete;
 
 /**Todo:
@@ -13,21 +15,32 @@ fn test_function() -> i32 {
     return -1;
 }
 
-#[rustfmt::skip]
 fn create_options() -> Vec<autocomplete::CommandOption> {
     use crate::autocomplete::create_operation;
     use crate::autocomplete::create_option;
 
     vec![
-        create_option("binaries", vec![
-                create_option("show", vec![
-                    create_operation("test-file", test_function)]),
-                create_option("write",vec![
-                    create_operation("new-file.bin", test_function)],
+        // binaries
+        create_option(
+            "binaries",
+            vec![
+                create_option("show", vec![create_operation("test-file", test_function)]),
+                create_option(
+                    "write",
+                    vec![create_operation("new-file.bin", test_function)],
                 ),
             ],
         ),
+        // gnu
         create_operation("gnu-plot", test_function),
+        // test
+        create_option(
+            "test",
+            vec![
+                create_operation("false", || return -1),
+                create_operation("true", || return 1),
+            ],
+        ),
     ]
 }
 
@@ -39,5 +52,12 @@ fn main() {
     }
 
     let operation = operation.unwrap();
-    operation();
+    let ret_code = operation();
+    if ret_code > 0 {
+        let color = colored::Colorize::green("Success");
+        println!("{}", color);
+    } else {
+        let msg = format!("Error: {}", ret_code).red();
+        println!("{}", msg);
+    }
 }
