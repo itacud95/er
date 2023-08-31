@@ -1,5 +1,8 @@
 use shell_completion::{BashCompletionInput, CompletionInput, CompletionSet};
 
+extern crate colored;
+use colored::*;
+
 #[derive(Clone)]
 enum OptionType {
     Options(Vec<CommandOption>),
@@ -40,9 +43,11 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
                     return Some(operation.to_owned());
                 }
             }
-
-            println!("'{}' is not a command", args.join(" "));
-            autocompleter.print_help();
+            let args = args.join(" ").yellow();
+            println!("'{}' is not a valid command", args);
+            for help in autocompleter.get_help() {
+                println!("{}", help);
+            }
         }
         Ok(input) => {
             let completions = autocompleter.tab_complete(input);
@@ -55,7 +60,7 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
 }
 
 trait AutocomleteOperions {
-    fn print_help(&self);
+    fn get_help(&self) ->Vec<String>;
     fn tab_complete(&self, input: BashCompletionInput) -> Vec<String>;
     fn get_current_option(&self, input: Vec<&str>) -> Option<CommandOption>;
 }
@@ -65,13 +70,17 @@ struct Autocomleter {
 }
 
 impl AutocomleteOperions for Autocomleter {
-    fn print_help(&self) {
-        let options = create_strings_from_vector(&self.options);
-        println!("Usage: er [OPTIONS]");
-        println!("Options: ");
-        for opt in options {
-            println!("\t{}", opt);
+    fn get_help(&self) -> Vec<String> {
+        let mut msg: Vec<String> = vec![];
+        msg.push(String::from("Options: "));
+        for opt in &self.options {
+            if let OptionType::Options(_operation) = &opt.option_type {
+                msg.push(format!("\t{} ->", opt.readable));
+            } else {
+                msg.push(format!("\t{}", opt.readable.green()));
+            }
         }
+        return msg;
     }
 
     fn tab_complete(&self, input: BashCompletionInput) -> Vec<String> {
