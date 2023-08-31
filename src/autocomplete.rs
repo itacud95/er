@@ -40,10 +40,14 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
                     return Some(operation.to_owned());
                 }
             }
+
+            println!("'{}' is not a command", args.join(" "));
+            autocompleter.print_help();
         }
         Ok(input) => {
             let completions = autocompleter.tab_complete(input);
             completions.suggest();
+            return None;
         }
     };
 
@@ -66,7 +70,7 @@ impl AutocomleteOperions for Autocomleter {
         println!("Usage: er [OPTIONS]");
         println!("Options: ");
         for opt in options {
-            println!("\t{0}", opt);
+            println!("\t{}", opt);
         }
     }
 
