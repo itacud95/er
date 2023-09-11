@@ -15,7 +15,7 @@ pub struct CommandOption {
     option_type: OptionType,
 }
 
-pub fn create_option(readable: &str, options: Vec<CommandOption>) -> CommandOption {
+pub fn create_category(readable: &str, options: Vec<CommandOption>) -> CommandOption {
     CommandOption {
         readable: readable.to_string(),
         option_type: OptionType::Options(options),
@@ -82,7 +82,7 @@ fn parse_options(tabs: usize, options: &Vec<CommandOption>) -> Vec<String> {
             msg.append(&mut parse_options(tabs + 4, options));
         } else {
             msg.push(spaced_string(
-                format!("{}", opt.readable.green()).as_str(),
+                format!("{}", opt.readable).as_str(),
                 tabs + 4,
             ));
         }
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn test_options_longer() {
         let func = || 0;
-        let options = vec![create_option(
+        let options = vec![create_category(
             "foobar",
             vec![create_operation("foo", func), create_operation("bar", func)],
         )];

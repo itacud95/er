@@ -2,30 +2,22 @@ use colored::Colorize;
 
 pub mod autocomplete;
 
-/**Todo:
- *
- * - Income & outcome calculater
- *  - Save to local file
- *  - Save to firebase
- *
- */
-
 fn test_function() -> i32 {
     println!("Test function!");
     return -1;
 }
 
 fn create_options() -> Vec<autocomplete::CommandOption> {
+    use crate::autocomplete::create_category;
     use crate::autocomplete::create_operation;
-    use crate::autocomplete::create_option;
 
     vec![
         // binaries
-        create_option(
+        create_category(
             "binaries",
             vec![
-                create_option("show", vec![create_operation("test-file", test_function)]),
-                create_option(
+                create_category("show", vec![create_operation("test-file", test_function)]),
+                create_category(
                     "write",
                     vec![create_operation("new-file.bin", test_function)],
                 ),
@@ -34,7 +26,7 @@ fn create_options() -> Vec<autocomplete::CommandOption> {
         // gnu
         create_operation("gnu-plot", test_function),
         // test
-        create_option(
+        create_category(
             "test",
             vec![
                 create_operation("false", || return -1),
