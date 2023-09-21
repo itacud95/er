@@ -1,22 +1,74 @@
-use std::process::Command;
+use serde::{Deserialize, Serialize};
+use serde_json::from_str;
+use std::{
+    fs::File,
+    io::{Read, Write},
+    process::Command,
+};
+
+/**
+ * Todo: 
+ * - Fix create default config
+ * - Store config under ~/.confi
+ */
 
 use colored::Colorize;
 
 pub mod autocomplete;
 
-fn test_function() -> i32 {
-    println!("Test function!");
-    return -1;
+#[derive(Debug, Serialize, Deserialize)]
+struct Config {
+    apk: String,
+}
+
+fn write_to_json_file() -> File {
+    let msg = format!("Generating default config").yellow();
+    println!("{}", msg);
+    let person = Config {
+        apk: String::from("apk.apk"),
+    };
+    let json_string = serde_json::to_string(&person).expect("msg");
+
+    match File::create("config.json") {
+        Ok(mut file) => {
+            file.write_all(json_string.as_bytes())
+                .expect("Failed to write default config");
+            return file;
+        }
+        Err(_) => {
+            panic!("Failed to create default config")
+        }
+    };
+}
+
+fn read_config() -> Config {
+    let mut file: File;
+    match File::open("config.json") {
+        Ok(f) => file = f,
+        Err(_) => {
+            file = write_to_json_file();
+        }
+    }
+
+    let mut json_string = String::new();
+    file.read_to_string(&mut json_string)
+        .expect("Failed to read file");
+
+    // Deserialize the JSON string into your struct
+    let person: Config = from_str(&json_string).expect("Failed to parse JSON");
+
+    // Now you can work with the `person` struct
+    println!("{:?}", person);
+
+    return person;
 }
 
 fn install_apk() -> i32 {
+    let config = read_config();
+
     println!("Installing apk!");
     let output = Command::new("adb")
-        .args(&[
-            "install",
-            "-t",
-            "apk.apk",
-        ])
+        .args(&["install", "-t", config.apk.as_ref()])
         .output()
         .expect("Failed to execute command");
 
@@ -36,19 +88,6 @@ fn create_options() -> Vec<autocomplete::CommandOption> {
     vec![
         // adb
         create_category("adb", vec![create_operation("install", install_apk)]),
-        // binaries
-        create_category(
-            "binaries",
-            vec![
-                create_category("show", vec![create_operation("test-file", test_function)]),
-                create_category(
-                    "write",
-                    vec![create_operation("new-file.bin", test_function)],
-                ),
-            ],
-        ),
-        // gnu
-        create_operation("gnu-plot", test_function),
         // test
         create_category(
             "test",
