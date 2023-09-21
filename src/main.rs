@@ -1,3 +1,5 @@
+use std::process::Command;
+
 use colored::Colorize;
 
 pub mod autocomplete;
@@ -7,11 +9,33 @@ fn test_function() -> i32 {
     return -1;
 }
 
+fn install_apk() -> i32 {
+    println!("Installing apk!");
+    let output = Command::new("adb")
+        .args(&[
+            "install",
+            "-t",
+            "apk.apk",
+        ])
+        .output()
+        .expect("Failed to execute command");
+
+    if output.status.success() {
+        println!("APK installed successfully");
+        return 0;
+    }
+    println!("Failed to install APK");
+    println!("Error: {:?}", output);
+    return -1;
+}
+
 fn create_options() -> Vec<autocomplete::CommandOption> {
     use crate::autocomplete::create_category;
     use crate::autocomplete::create_operation;
 
     vec![
+        // adb
+        create_category("adb", vec![create_operation("install", install_apk)]),
         // binaries
         create_category(
             "binaries",
@@ -45,7 +69,7 @@ fn main() {
 
     let operation = operation.unwrap();
     let ret_code = operation();
-    if ret_code > 0 {
+    if ret_code >= 0 {
         let color = colored::Colorize::green("Success");
         println!("{}", color);
     } else {
