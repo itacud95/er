@@ -2,16 +2,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::from_str;
 use std::{
     fs::File,
-    io::{Read, Write},
-    process::Command,
+    io::{BufRead, BufReader, Read, Write},
+    process::{Command, Stdio},
 };
 
 /**
- * Todo: 
+ * Todo:
  * - Fix create default config
  * - Store config under ~/.confi
  */
-
 use colored::Colorize;
 
 pub mod autocomplete;
@@ -81,13 +80,51 @@ fn install_apk() -> i32 {
     return -1;
 }
 
+fn adb_logcat() -> i32 {
+    Command::new("adb")
+        .args(&["logcat", "-c"])
+        .output()
+        .expect("Failed to execute command");
+
+    let mut adb_logcat = Command::new("adb")
+        .args(&["logcat", "-v", "color"])
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("msg");
+
+    // Create a buffered reader to read the command's output
+    let stdout = adb_logcat.stdout.take().expect("Failed to open stdout");
+    let reader = BufReader::new(stdout);
+
+    // Continuously read and print the output
+    for line in reader.lines() {
+        match line {
+            Ok(line) => println!("{}", line),
+            Err(err) => eprintln!("Error reading line: {}", err),
+        }
+    }
+
+    // Wait for the adb logcat command to finish (this will not be reached in this case)
+    let status = adb_logcat.wait().expect("msg");
+    if !status.success() {
+        eprintln!("adb logcat command failed with exit code: {}", status);
+    }
+    return 0;
+}
+
 fn create_options() -> Vec<autocomplete::CommandOption> {
     use crate::autocomplete::create_category;
     use crate::autocomplete::create_operation;
 
     vec![
         // adb
-        create_category("adb", vec![create_operation("install", install_apk)]),
+        create_category(
+            "adb",
+            vec![
+                create_operation("install", install_apk),
+                create_operation("logcat", adb_logcat),
+            ],
+        ),
         // test
         create_category(
             "test",
