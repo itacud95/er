@@ -6,10 +6,6 @@ use std::{
     process::{exit, Command, Stdio},
 };
 
-/**
- * Todo:
- * - Fix create default config
- */
 use colored::Colorize;
 
 pub mod autocomplete;
@@ -34,10 +30,10 @@ fn config_location() -> String {
 fn write_to_json_file() -> File {
     let msg = format!("Generating default config").yellow();
     println!("{}", msg);
-    let person = Config {
+    let config = Config {
         apk: String::from("apk.apk"),
     };
-    let json_string = serde_json::to_string(&person).expect("msg");
+    let json_string = serde_json::to_string(&config).expect("msg");
 
     match File::create(config_location()) {
         Ok(mut file) => {
@@ -50,7 +46,6 @@ fn write_to_json_file() -> File {
                 .expect("Failed to write default config");
 
             exit(1);
-            return file;
         }
         Err(_) => {
             panic!("Failed to create default config: {}", config_location())
@@ -72,12 +67,12 @@ fn read_config() -> Config {
         .expect("Failed to read file");
 
     // Deserialize the JSON string into your struct
-    let person: Config = from_str(&json_string).expect("Failed to parse JSON");
+    let config: Config = from_str(&json_string).expect("Failed to parse JSON");
 
-    // Now you can work with the `person` struct
-    println!("{:?}", person);
+    // Now you can work with the `config` struct
+    println!("{:?}", config);
 
-    return person;
+    return config;
 }
 
 fn install_apk() -> i32 {
