@@ -3,13 +3,12 @@ use serde_json::from_str;
 use std::{
     fs::File,
     io::{BufRead, BufReader, Read, Write},
-    process::{Command, Stdio},
+    process::{exit, Command, Stdio},
 };
 
 /**
  * Todo:
  * - Fix create default config
- * - Store config under ~/.confi
  */
 use colored::Colorize;
 
@@ -20,6 +19,18 @@ struct Config {
     apk: String,
 }
 
+fn config_location() -> String {
+    // todo: on read once
+    const CONFIG_LOCATION: &str = "/.er_config.json";
+    match home::home_dir() {
+        Some(home) => {
+            let path = home.to_str().expect("msg").to_owned() + CONFIG_LOCATION;
+            return path;
+        }
+        None => panic!("Failed to find home dir"),
+    }
+}
+
 fn write_to_json_file() -> File {
     let msg = format!("Generating default config").yellow();
     println!("{}", msg);
@@ -28,21 +39,28 @@ fn write_to_json_file() -> File {
     };
     let json_string = serde_json::to_string(&person).expect("msg");
 
-    match File::create("config.json") {
+    match File::create(config_location()) {
         Ok(mut file) => {
+            println!(
+                "{}{}",
+                format!("Default config created: ").yellow(),
+                config_location()
+            );
             file.write_all(json_string.as_bytes())
                 .expect("Failed to write default config");
+
+            exit(1);
             return file;
         }
         Err(_) => {
-            panic!("Failed to create default config")
+            panic!("Failed to create default config: {}", config_location())
         }
     };
 }
 
 fn read_config() -> Config {
     let mut file: File;
-    match File::open("config.json") {
+    match File::open(config_location()) {
         Ok(f) => file = f,
         Err(_) => {
             file = write_to_json_file();
