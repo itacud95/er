@@ -88,7 +88,7 @@ fn install_apk() -> i32 {
 
     if output.status.success() {
         println!("APK installed successfully");
-        return 0;
+        return adb_launch();
     }
     println!("Failed to install APK");
     println!("Error: {:?}", output);
