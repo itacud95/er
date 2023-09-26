@@ -13,6 +13,7 @@ pub mod autocomplete;
 #[derive(Debug, Serialize, Deserialize)]
 struct Config {
     apk: String,
+    apk_intent: String,
 }
 
 fn config_location() -> String {
@@ -32,6 +33,7 @@ fn write_to_json_file() -> File {
     println!("{}", msg);
     let config = Config {
         apk: String::from("apk.apk"),
+        apk_intent: String::from("com.package.app/.MainActivity"),
     };
     let json_string = serde_json::to_string(&config).expect("msg");
 
@@ -93,6 +95,32 @@ fn install_apk() -> i32 {
     return -1;
 }
 
+fn adb_launch() -> i32 {
+    let config = read_config();
+
+    println!("Launching apk!");
+    let output = Command::new("adb")
+        .args(&[
+            "shell",
+            "am",
+            "start",
+            "-a",
+            "android.intent.action.MAIN",
+            "-n",
+            config.apk_intent.as_ref(),
+        ])
+        .output()
+        .expect("Failed to execute command");
+
+    if output.status.success() {
+        println!("APK installed successfully");
+        return 0;
+    }
+    println!("Failed to install APK");
+    println!("Error: {:?}", output);
+    return -1;
+}
+
 fn adb_logcat() -> i32 {
     Command::new("adb")
         .args(&["logcat", "-c"])
@@ -136,6 +164,7 @@ fn create_options() -> Vec<autocomplete::CommandOption> {
             vec![
                 create_operation("install", install_apk),
                 create_operation("logcat", adb_logcat),
+                create_operation("launch", adb_launch),
             ],
         ),
         // test
