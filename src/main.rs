@@ -15,7 +15,6 @@ fn create_options() -> Vec<autocomplete::CommandOption> {
             vec![
                 create_operation("install", install_apk),
                 create_operation("logcat", adb_logcat),
-                create_operation("launch", adb_launch),
             ],
         ),
         // test
