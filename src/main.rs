@@ -1,13 +1,13 @@
 use colored::Colorize;
 
 pub mod adb;
-pub mod autocomplete;
+pub mod cli;
 pub mod config;
 
-fn create_options() -> Vec<autocomplete::CommandOption> {
+fn create_options() -> Vec<cli::CommandOption> {
     use crate::adb::*;
-    use crate::autocomplete::create_category;
-    use crate::autocomplete::create_operation;
+    use crate::cli::create_category;
+    use crate::cli::create_operation;
     vec![
         // adb
         create_category(
@@ -29,7 +29,7 @@ fn create_options() -> Vec<autocomplete::CommandOption> {
 }
 
 fn main() {
-    let operation = autocomplete::autocomplete(create_options());
+    let operation = cli::autocomplete(create_options());
     if operation.is_none() {
         // tab-completion
         return;
