@@ -38,9 +38,9 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
             let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
             let current_option = autocompleter.get_current_option(v8);
 
-            if let Some(current_option) = current_option {
-                let readable = current_option.readable;
-                if readable != args.last().unwrap().as_ref() {
+            if let Some(current_option) = &current_option {
+                let readable = &current_option.readable;
+                if readable != args.last().unwrap() {
                     println!("Got more than asked for. ");
                     return None;
                 }
@@ -48,8 +48,18 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
                     return Some(operation.to_owned());
                 }
             }
-            let args = args.join(" ").yellow();
-            println!("'{}' is not a valid command", args);
+
+            if current_option.is_some() {
+                let current_option = current_option.unwrap();
+                if let OptionType::Options(options) = current_option.option_type {
+                    println!("Missing input for [{}]:", current_option.readable.yellow());
+                    for option in parse_options(0, &options) {
+                        println!("{}", option);
+                    }
+                }
+                return None;
+            }
+
             println!("Options: ");
             for help in autocompleter.get_help() {
                 println!("{}", help);
