@@ -38,8 +38,13 @@ pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
             let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
             let current_option = autocompleter.get_current_option(v8);
 
-            if current_option.is_some() {
-                if let OptionType::Operation(operation) = &current_option.unwrap().option_type {
+            if let Some(current_option) = current_option {
+                let readable = current_option.readable;
+                if readable != args.last().unwrap().as_ref() {
+                    println!("Got more than asked for. ");
+                    return None;
+                }
+                if let OptionType::Operation(operation) = &current_option.option_type {
                     return Some(operation.to_owned());
                 }
             }
@@ -196,5 +201,33 @@ mod tests {
         assert!(completions.len() > 0);
         assert!(completions[0] == "foo");
         assert!(completions[1] == "bar");
+    }
+
+    #[test]
+    fn test_get_option() {
+        let options = vec![create_category(
+            "foobar",
+            vec![create_operation("foo", || 0), create_operation("bar", || 0)],
+        )];
+        let arguments = BashCompletionInput::from("er foobar bar ");
+        let autocompleter = Autocomleter { options };
+        let current_option = autocompleter.get_current_option(arguments.args());
+
+        assert!(current_option.is_some());
+        let completions = autocompleter.tab_complete(arguments);
+        assert!(completions.len() == 0);
+    }
+
+    #[test]
+    fn test_to_many_arguments() {
+        let options = vec![create_category(
+            "foobar",
+            vec![create_operation("foo", || 0), create_operation("bar", || 0)],
+        )];
+        let arguments = BashCompletionInput::from("er foobar bar tomuch");
+        let autocompleter = Autocomleter { options };
+        let current_option = autocompleter.get_current_option(arguments.args());
+
+        assert!(current_option.is_some());
     }
 }
