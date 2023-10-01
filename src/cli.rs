@@ -30,48 +30,53 @@ pub fn create_operation(readable: &str, operation: fn() -> i32) -> CommandOption
 }
 
 pub fn autocomplete(options: Vec<CommandOption>) -> Option<fn() -> i32> {
-    let autocompleter = Autocomleter { options: options };
+    let autocompleter = Autocompleter { options: options };
 
     match BashCompletionInput::from_env() {
-        Err(_) => {
-            let args: Vec<String> = std::env::args().collect();
-            let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
-            let current_option = autocompleter.get_current_option(v8);
-
-            if let Some(current_option) = &current_option {
-                let readable = &current_option.readable;
-                if readable != args.last().unwrap() {
-                    println!("Got more than asked for. ");
-                    return None;
-                }
-                if let OptionType::Operation(operation) = &current_option.option_type {
-                    return Some(operation.to_owned());
-                }
-            }
-
-            if current_option.is_some() {
-                let current_option = current_option.unwrap();
-                if let OptionType::Options(options) = current_option.option_type {
-                    println!("Missing input for [{}]:", current_option.readable.yellow());
-                    for option in parse_options(0, &options) {
-                        println!("{}", option);
-                    }
-                }
-                return None;
-            }
-
-            println!("Options: ");
-            for help in autocompleter.get_help() {
-                println!("{}", help);
-            }
-        }
         Ok(input) => {
             let completions = autocompleter.tab_complete(input);
             completions.suggest();
             return None;
         }
+        Err(_) => {
+            return get_operation(autocompleter);
+        }
     };
 
+    // return None;
+}
+
+fn get_operation(autocompleter: Autocompleter) -> Option<fn() -> i32> {
+    let args: Vec<String> = std::env::args().collect();
+    let v8: Vec<&str> = args.iter().map(AsRef::as_ref).collect();
+    let current_option = autocompleter.get_current_option(v8);
+
+    if let Some(current_option) = &current_option {
+        let readable = &current_option.readable;
+        if readable != args.last().unwrap() {
+            println!("Got more than asked for. ");
+            return None;
+        }
+        if let OptionType::Operation(operation) = &current_option.option_type {
+            return Some(operation.to_owned());
+        }
+    }
+
+    if current_option.is_some() {
+        let current_option = current_option.unwrap();
+        if let OptionType::Options(options) = current_option.option_type {
+            println!("Missing input for [{}]:", current_option.readable.yellow());
+            for option in parse_options(0, &options) {
+                println!("{}", option);
+            }
+        }
+        return None;
+    }
+
+    println!("Options: ");
+    for help in autocompleter.get_help() {
+        println!("{}", help);
+    }
     return None;
 }
 
@@ -81,7 +86,7 @@ trait AutocomleteOperions {
     fn get_current_option(&self, input: Vec<&str>) -> Option<CommandOption>;
 }
 
-struct Autocomleter {
+struct Autocompleter {
     options: Vec<CommandOption>,
 }
 
@@ -109,7 +114,7 @@ fn spaced_string(msg: &str, num_spaces: usize) -> String {
     format!("|{:width$} {}", "", msg, width = num_spaces)
 }
 
-impl AutocomleteOperions for Autocomleter {
+impl AutocomleteOperions for Autocompleter {
     fn get_help(&self) -> Vec<String> {
         let msg = parse_options(0, &self.options);
         return msg;
@@ -180,7 +185,7 @@ mod tests {
         let func = || 0;
         let options = vec![create_operation("foo", func)];
         let arguments = BashCompletionInput::from("er ");
-        let autocompleter = Autocomleter { options: options };
+        let autocompleter = Autocompleter { options: options };
         let current_option = autocompleter.get_current_option(arguments.args());
 
         // no option is returned
@@ -200,7 +205,7 @@ mod tests {
             vec![create_operation("foo", func), create_operation("bar", func)],
         )];
         let arguments = BashCompletionInput::from("er foobar ");
-        let autocompleter = Autocomleter { options: options };
+        let autocompleter = Autocompleter { options: options };
         let current_option = autocompleter.get_current_option(arguments.args());
 
         // a option is returned
@@ -220,7 +225,7 @@ mod tests {
             vec![create_operation("foo", || 0), create_operation("bar", || 0)],
         )];
         let arguments = BashCompletionInput::from("er foobar bar ");
-        let autocompleter = Autocomleter { options };
+        let autocompleter = Autocompleter { options };
         let current_option = autocompleter.get_current_option(arguments.args());
 
         assert!(current_option.is_some());
@@ -235,7 +240,7 @@ mod tests {
             vec![create_operation("foo", || 0), create_operation("bar", || 0)],
         )];
         let arguments = BashCompletionInput::from("er foobar bar tomuch");
-        let autocompleter = Autocomleter { options };
+        let autocompleter = Autocompleter { options };
         let current_option = autocompleter.get_current_option(arguments.args());
 
         assert!(current_option.is_some());
