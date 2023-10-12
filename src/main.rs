@@ -15,8 +15,17 @@ fn create_options() -> Vec<cli::CommandOption> {
             vec![
                 create_operation("install", install_apk),
                 create_operation("logcat", adb_logcat),
+                create_operation("file_log", || {
+                    println!("implement me");
+                    return -1;
+                }),
             ],
         ),
+        // linux utility
+        create_operation("find", || {
+            println!("implement me");
+            return -1;
+        }),
         // test
         create_category(
             "test",
