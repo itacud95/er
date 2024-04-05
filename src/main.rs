@@ -75,6 +75,12 @@ fn create_options() -> Vec<cli::CommandOption> {
                         create_operation("intel32", || {
                             return update_config_file("android_abis", "x86");
                         }),
+                        create_operation("32", || {
+                            return update_config_file("android_abis", "x86,armeabi-v7a");
+                        }),
+                        create_operation("64", || {
+                            return update_config_file("android_abis", "x86_64,arm64-v8a");
+                        }),
                     ],
                 )],
             )],
