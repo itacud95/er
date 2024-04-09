@@ -1,4 +1,7 @@
-use std::fs;
+use std::{
+    fs::{self, File},
+    io::Read,
+};
 
 use colored::Colorize;
 
@@ -6,6 +9,14 @@ pub mod adb;
 pub mod cli;
 pub mod config;
 pub mod find;
+
+fn read_config_file() -> i32 {
+    let mut file = File::open("/home/jk/.pybuild").expect("failed to open config file");
+    let mut content = String::new();
+    let _ = file.read_to_string(&mut content);
+    println!("{}", content);
+    return 0;
+}
 
 fn update_config_file(key: &str, value: &str) -> i32 {
     let file_path = "/home/jk/.pybuild";
@@ -81,10 +92,17 @@ fn create_options() -> Vec<cli::CommandOption> {
                         create_operation("64", || {
                             return update_config_file("android_abis", "x86_64,arm64-v8a");
                         }),
+                        create_operation("all", || {
+                            return update_config_file(
+                                "android_abis",
+                                "x86_64,arm64-v8a,x86,armeabi-v7a",
+                            );
+                        }),
                     ],
                 )],
             )],
         ),
+        create_category("read", vec![create_operation("config", read_config_file)]),
     ]
 }
 
