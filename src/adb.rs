@@ -1,7 +1,8 @@
 use std::{
-    io::{BufRead, BufReader},
-    process::{Command, Stdio},
+    fs::File, io::{BufRead, BufReader, Write}, process::{Command, Stdio}
 };
+
+use regex::Regex;
 
 use crate::config::read_config;
 
@@ -50,6 +51,8 @@ pub fn adb_launch() -> i32 {
 }
 
 pub fn adb_logcat() -> i32 {
+    let mut file = File::create("er_adb.log").expect("Unable to create file");
+
     Command::new("adb")
         .args(&["logcat", "-c"])
         .output()
@@ -68,7 +71,12 @@ pub fn adb_logcat() -> i32 {
     // Continuously read and print the output
     for line in reader.lines() {
         match line {
-            Ok(line) => println!("{}", line),
+            Ok(line) => {
+                println!("{}", line);
+                let re = Regex::new(r"\x1b\[[0-9;]*m").unwrap();
+                let cleaned_text = re.replace_all(&line, "");
+                _ = writeln!(file, "{}", cleaned_text);
+            },
             Err(err) => eprintln!("Error reading line: {}", err),
         }
     }
